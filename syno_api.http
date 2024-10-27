@@ -1,0 +1,60 @@
+###
+# GET API INFO
+# @name info
+GET {{$dotenv SYNOLOGY_PROTO}}://{{$dotenv SYNOLOGY_IP_ADDRESS}}:{{$dotenv SYNOLOGY_PORT}}/webapi/entry.cgi?api=SYNO.API.Info&method=query&version=1
+Accept: application/json
+
+###
+# API Info Variables
+@authVersion = {{info.response.body.$.data['SYNO.API.Auth'].maxVersion}}
+@authPath = {{info.response.body.$.data['SYNO.API.Auth'].path}}
+@virtHostVersion = {{info.response.body.$.data['SYNO.Virtualization.API.Host'].maxVersion}}
+@virtHostPath = {{info.response.body.$.data['SYNO.Virtualization.API.Host'].path}}
+@virtGuestVersion = {{info.response.body.$.data['SYNO.Virtualization.API.Guest'].maxVersion}}
+@virtGuestPath = {{info.response.body.$.data['SYNO.Virtualization.API.Guest'].path}}
+@virtGuestImageVersion = {{info.response.body.$.data['SYNO.Virtualization.API.Guest.Image'].maxVersion}}
+@virtGuestImagePath = {{info.response.body.$.data['SYNO.Virtualization.API.Guest.Image'].path}}
+@virtTaskInfoVersion = {{info.response.body.$.data['SYNO.Virtualization.API.Task.Info'].maxVersion}}
+@virtTaskInfoPath = {{info.response.body.$.data['SYNO.Virtualization.API.Task.Info'].path}}
+ 
+
+###
+# AUTHENTICATE
+# @name auth
+{{$dotenv SYNOLOGY_PROTO}}://{{$dotenv SYNOLOGY_IP_ADDRESS}}:{{$dotenv SYNOLOGY_PORT}}/webapi/{{authPath}}?api=SYNO.API.Auth&version={{authVersion}}&method=login&account={{$dotenv SYNOLOGY_USERNAME}}&passwd={{$dotenv SYNOLOGY_PASSWORD}}&format=cookie&enable_syno_token=yes
+Accept: application/json
+
+###
+# VM GET HOST INFO
+# @name virtualizationGetHostOperation
+{{$dotenv SYNOLOGY_PROTO}}://{{$dotenv SYNOLOGY_IP_ADDRESS}}:{{$dotenv SYNOLOGY_PORT}}/webapi/{{virtHostPath}}?api=SYNO.Virtualization.API.Host&version={{virtHostVersion}}&method=list
+X-SYNO-TOKEN: {{auth.response.body.$.data.synotoken}}
+Accept: application/json
+
+###
+# VM GET VMS INFO
+# @name virtualizationGetVmOperation
+{{$dotenv SYNOLOGY_PROTO}}://{{$dotenv SYNOLOGY_IP_ADDRESS}}:{{$dotenv SYNOLOGY_PORT}}/webapi/{{virtGuestPath}}?api=SYNO.Virtualization.API.Guest&version={{virtGuestVersion}}&method=list
+X-SYNO-TOKEN: {{auth.response.body.$.data.synotoken}}
+Accept: application/json
+
+###
+# LIST GUEST VM IMAGES
+# @name virtualizationGetVmOperation
+{{$dotenv SYNOLOGY_PROTO}}://{{$dotenv SYNOLOGY_IP_ADDRESS}}:{{$dotenv SYNOLOGY_PORT}}/webapi/{{virtGuestImagePath}}?api=SYNO.Virtualization.API.Guest.Image&version={{virtGuestImageVersion}}&method=list
+X-SYNO-TOKEN: {{auth.response.body.$.data.synotoken}}
+Accept: application/json
+
+###
+# CREATE GUEST VM IMAGE
+# @name virtualizationCreateVmOperation
+{{$dotenv SYNOLOGY_PROTO}}://{{$dotenv SYNOLOGY_IP_ADDRESS}}:{{$dotenv SYNOLOGY_PORT}}/webapi/{{virtGuestImagePath}}?api=SYNO.Virtualization.API.Guest.Image&version={{virtGuestImageVersion}}&method=create&image_name=test&storage_names=["NAS - VM Storage 1"]&type=disk&ds_file_path=home/abc
+X-SYNO-TOKEN: {{auth.response.body.$.data.synotoken}}
+Accept: application/json
+
+###
+# GET STATUS OF CREATE GUEST VM IMAGE
+@taskId = {{virtualizationCreateVmOperation.response.body.$.data.task_id}}
+{{$dotenv SYNOLOGY_PROTO}}://{{$dotenv SYNOLOGY_IP_ADDRESS}}:{{$dotenv SYNOLOGY_PORT}}/webapi/{{virtTaskInfoPath}}?api=SYNO.Virtualization.API.Task.Info&version={{virtTaskInfoVersion}}&method=get&task_id={{taskId}}
+X-SYNO-TOKEN: {{auth.response.body.$.data.synotoken}}
+Accept: application/json
